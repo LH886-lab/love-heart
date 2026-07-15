@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跳动爱心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --heart-color: #ff4757;
+            --heart-size: 200px;
+            --beat-speed: 1s;
+            --bg-color: #1a1a2e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-color);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 背景粒子容器 */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            color: var(--heart-color);
+            opacity: 0.6;
+            animation: float linear infinite;
+            user-select: none;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg) scale(0.5);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 点击产生的爱心 */
+        .click-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 10;
+            animation: clickFloat 1s ease-out forwards;
+        }
+
+        @keyframes clickFloat {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -150px) scale(1.5) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        /* 主容器 */
+        .main-container {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* 爱心容器 */
+        .heart-wrapper {
+            position: relative;
+            width: var(--heart-size);
+            height: var(--heart-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .heart-wrapper:active {
+            transform: scale(0.95);
+        }
+
+        .heart {
+            width: 100%;
+            height: 100%;
+            fill: var(--heart-color);
+            filter: drop-shadow(0 10px 30px rgba(255, 71, 87, 0.5));
+            animation: heartbeat var(--beat-speed) ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            14% { transform: scale(1.15); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.15); }
+            70% { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+
+        /* 光晕效果 */
+        .glow {
+            position: absolute;
+            width: calc(var(--heart-size) * 1.8);
+            height: calc(var(--heart-size) * 1.8);
+            background: radial-gradient(circle, var(--heart-color) 0%, transparent 70%);
+            opacity: 0.15;
+            border-radius: 50%;
+            animation: pulse var(--beat-speed) ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.15; }
+            14% { transform: scale(1.2); opacity: 0.25; }
+            28% { transform: scale(1); opacity: 0.15; }
+            42% { transform: scale(1.2); opacity: 0.25; }
+            70% { transform: scale(1); opacity: 0.15; }
+        }
+
+        /* 文字 */
+        .love-text {
+            color: white;
+            font-size: clamp(24px, 6vw, 48px);
+            font-weight: bold;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+            max-width: 90vw;
+            word-break: break-word;
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+            from { text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+            to { text-shadow: 0 0 30px var(--heart-color), 0 0 60px var(--heart-color); }
+        }
+
+        .sub-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: clamp(14px, 3vw, 20px);
+            margin-top: 10px;
+        }
+
+        /* 控制面板 */
+        .control-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .control-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg);
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 75px;
+            right: 20px;
+            width: 300px;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            background: rgba(30, 30, 50, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            z-index: 100;
+            transform: translateX(calc(100% + 40px));
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-panel.open {
+            transform: translateX(0);
+        }
+
+        .control-panel h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .control-group input[type="text"],
+        .control-group input[type="color"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .control-group input[type="color"] {
+            height: 45px;
+            padding: 3px;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--heart-color);
+            cursor: pointer;
+        }
+
+        .range-value {
+            display: inline-block;
+            color: var(--heart-color);
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .switch-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .slider:before {
+            content: '';
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .switch input:checked + .slider {
+            background: var(--heart-color);
+        }
+
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .theme-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .theme-btn {
+            height: 35px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .control-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn.primary {
+            background: var(--heart-color);
+        }
+
+        .control-btn.primary:hover {
+            opacity: 0.9;
+        }
+
+        /* 音乐控制按钮 */
+        .music-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .music-control:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .music-control.playing {
+            animation: musicPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes musicPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 71, 87, 0); }
+        }
+
+        /* 全屏按钮 */
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 提示信息 */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .control-panel {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                max-width: none;
+            }
+
+            .control-toggle {
+                top: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景粒子 -->
+    <div id="particles"></div>
+
+    <!-- 主内容 -->
+    <div class="main-container">
+        <div class="heart-wrapper" id="heartWrapper" title="点击产生爱心">
+            <div class="glow"></div>
+            <svg class="heart" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+        <div>
+            <div class="love-text" id="loveText">❤️ 我爱你</div>
+            <div class="sub-text" id="subText">点击爱心，把爱传递给 TA</div>
+        </div>
+    </div>
+
+    <!-- 设置按钮 -->
+    <button class="control-toggle" id="controlToggle" title="设置">⚙️</button>
+
+    <!-- 控制面板 -->
+    <div class="control-panel" id="controlPanel">
+        <h3>❤️ 爱心设置</h3>
+
+        <div class="control-group">
+            <label>主标题文字</label>
+            <input type="text" id="textInput" value="❤️ 我爱你" maxlength="30">
+        </div>
+
+        <div class="control-group">
+            <label>副标题文字</label>
+            <input type="text" id="subTextInput" value="点击爱心，把爱传递给 TA" maxlength="50">
+        </div>
+
+        <div class="control-group">
+            <label>爱心颜色</label>
+            <input type="color" id="colorInput" value="#ff4757">
+        </div>
+
+        <div class="control-group">
+            <label>背景颜色</label>
+            <input type="color" id="bgColorInput" value="#1a1a2e">
+        </div>
+
+        <div class="control-group">
+            <label>爱心大小 <span class="range-value" id="sizeValue">200px</span></label>
+            <input type="range" id="sizeInput" min="100" max="400" value="200">
+        </div>
+
+        <div class="control-group">
+            <label>跳动速度 <span class="range-value" id="speedValue">1.0s</span></label>
+            <input type="range" id="speedInput" min="0.3" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <label>粒子数量 <span class="range-value" id="particleValue">30</span></label>
+            <input type="range" id="particleInput" min="0" max="80" value="30">
+        </div>
+
+        <div class="control-group">
+            <label>主题预设</label>
+            <div class="theme-presets">
+                <button class="theme-btn" data-color="#ff4757" data-bg="#1a1a2e" style="background: linear-gradient(135deg, #ff4757, #1a1a2e);"></button>
+                <button class="theme-btn" data-color="#ff6b9d" data-bg="#2d132c" style="background: linear-gradient(135deg, #ff6b9d, #2d132c);"></button>
+                <button class="theme-btn" data-color="#ff9ff3" data-bg="#130f40" style="background: linear-gradient(135deg, #ff9ff3, #130f40);"></button>
+                <button class="theme-btn" data-color="#feca57" data-bg="#222f3e" style="background: linear-gradient(135deg, #feca57, #222f3e);"></button>
+                <button class="theme-btn" data-color="#48dbfb" data-bg="#0c2461" style="background: linear-gradient(135deg, #48dbfb, #0c2461);"></button>
+                <button class="theme-btn" data-color="#1dd1a1" data-bg="#10ac84" style="background: linear-gradient(135deg, #1dd1a1, #0b4d3c);"></button>
+                <button class="theme-btn" data-color="#ff9f43" data-bg="#2c2c54" style="background: linear-gradient(135deg, #ff9f43, #2c2c54);"></button>
+                <button class="theme-btn" data-color="#ee5a24" data-bg="#2f3542" style="background: linear-gradient(135deg, #ee5a24, #2f3542);"></button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="switch-row">
+                <span>背景粒子</span>
+                <label class="switch">
+                    <input type="checkbox" id="particleToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="switch-row">
+                <span>心跳音效</span>
+                <label class="switch">
+                    <input type="checkbox" id="soundToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="control-btn primary" id="saveBtn">保存设置</button>
+            <button class="control-btn" id="resetBtn">恢复默认</button>
+        </div>
+    </div>
+
+    <!-- 全屏按钮 -->
+    <button class="fullscreen-btn" id="fullscreenBtn" title="全屏">⛶</button>
+
+    <!-- 音乐/音效按钮 -->
+    <button class="music-control" id="musicBtn" title="心跳音效">🔇</button>
+
+    <!-- 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ========== 配置管理 ==========
+        const CONFIG_KEY = 'love_heart_config';
+
+        const defaultConfig = {
+            text: '❤️ 我爱你',
+            subText: '点击爱心，把爱传递给 TA',
+            heartColor: '#ff4757',
+            bgColor: '#1a1a2e',
+            heartSize: 200,
+            beatSpeed: 1,
+            particleCount: 30,
+            particlesEnabled: true,
+            soundEnabled: false
+        };
+
+        let config = { ...defaultConfig };
+        let audioContext = null;
+        let beatInterval = null;
+
+        function loadConfig() {
+            const saved = localStorage.getItem(CONFIG_KEY);
+            if (saved) {
+                try {
+                    config = { ...defaultConfig, ...JSON.parse(saved) };
+                } catch (e) {
+                    console.error('配置读取失败', e);
+                }
+            }
+        }
+
+        function saveConfig() {
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+            showToast('设置已保存');
+        }
+
+        function resetConfig() {
+            config = { ...defaultConfig };
+            applyConfig();
+            updateControls();
+            showToast('已恢复默认');
+        }
+
+        // ========== 应用配置 ==========
+        function applyConfig() {
+            const root = document.documentElement;
+            root.style.setProperty('--heart-color', config.heartColor);
+            root.style.setProperty('--bg-color', config.bgColor);
+            root.style.setProperty('--heart-size', config.heartSize + 'px');
+            root.style.setProperty('--beat-speed', config.beatSpeed + 's');
+
+            document.getElementById('loveText').textContent = config.text;
+            document.getElementById('subText').textContent = config.subText;
+
+            createParticles();
+            updateSoundState();
+        }
+
+        function updateControls() {
+            document.getElementById('textInput').value = config.text;
+            document.getElementById('subTextInput').value = config.subText;
+            document.getElementById('colorInput').value = config.heartColor;
+            document.getElementById('bgColorInput').value = config.bgColor;
+            document.getElementById('sizeInput').value = config.heartSize;
+            document.getElementById('speedInput').value = config.beatSpeed;
+            document.getElementById('particleInput').value = config.particleCount;
+            document.getElementById('particleToggle').checked = config.particlesEnabled;
+            document.getElementById('soundToggle').checked = config.soundEnabled;
+
+            document.getElementById('sizeValue').textContent = config.heartSize + 'px';
+            document.getElementById('speedValue').textContent = config.beatSpeed + 's';
+            document.getElementById('particleValue').textContent = config.particleCount;
+        }
+
+        // ========== 粒子背景 ==========
+        function createParticles() {
+            const container = document.getElementById('particles');
+            container.innerHTML = '';
+
+            if (!config.particlesEnabled || config.particleCount <= 0) return;
+
+            const symbols = ['❤', '💖', '💕', '💗', '💓', '💝'];
+
+            for (let i = 0; i < config.particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+
+                const size = Math.random() * 20 + 12;
+                const left = Math.random() * 100;
+                const duration = Math.random() * 8 + 6;
+                const delay = Math.random() * 8;
+                const opacity = Math.random() * 0.4 + 0.2;
+
+                particle.style.fontSize = size + 'px';
+                particle.style.left = left + '%';
+                particle.style.animationDuration = duration + 's';
+                particle.style.animationDelay = delay + 's';
+                particle.style.opacity = opacity;
+
+                container.appendChild(particle);
+            }
+        }
+
+        // ========== 点击爱心特效 ==========
+        function createClickHeart(x, y) {
+            const heart = document.createElement('div');
+            heart.className = 'click-heart';
+            heart.innerHTML = '❤';
+            heart.style.left = x + 'px';
+            heart.style.top = y + 'px';
+            heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+            heart.style.color = config.heartColor;
+            document.body.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 1000);
+        }
+
+        function handleHeartClick(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * 100;
+                    const offsetY = (Math.random() - 0.5) * 100;
+                    createClickHeart(centerX + offsetX, centerY + offsetY);
+                }, i * 80);
+            }
+
+            if (config.soundEnabled && audioContext) {
+                playHeartbeatSound(1.2);
+            }
+        }
+
+        function handleBackgroundClick(e) {
+            if (e.target.closest('.control-panel') || e.target.closest('.control-toggle')) return;
+            createClickHeart(e.clientX, e.clientY);
+        }
+
+        // ========== 心跳音效 ==========
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playHeartbeatSound(intensity = 1) {
+            if (!audioContext) return;
+
+            const now = audioContext.currentTime;
+            const duration = 0.15;
+
+            // 第一个心跳声（强）
+            playBeat(now, 0.15 * intensity, 180);
+            // 第二个心跳声（弱）
+            playBeat(now + 0.18, 0.08 * intensity, 160);
+        }
+
+        function playBeat(startTime, volume, frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(frequency, startTime);
+            oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.5, startTime + 0.15);
+
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.03);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 0.15);
+        }
+
+        function startHeartbeatSound() {
+            stopHeartbeatSound();
+            if (!config.soundEnabled) return;
+
+            initAudio();
+            playHeartbeatSound();
+            beatInterval = setInterval(() => {
+                playHeartbeatSound();
+            }, config.beatSpeed * 1000);
+        }
+
+        function stopHeartbeatSound() {
+            if (beatInterval) {
+                clearInterval(beatInterval);
+                beatInterval = null;
+            }
+        }
+
+        function updateSoundState() {
+            const musicBtn = document.getElementById('musicBtn');
+            if (config.soundEnabled) {
+                musicBtn.textContent = '🔊';
+                musicBtn.classList.add('playing');
+                startHeartbeatSound();
+            } else {
+                musicBtn.textContent = '🔇';
+                musicBtn.classList.remove('playing');
+                stopHeartbeatSound();
+            }
+        }
+
+        // ========== 全屏 ==========
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    showToast('全屏失败：' + err.message);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // ========== 提示 ==========
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ========== 事件绑定 ==========
+        function bindEvents() {
+            // 控制面板开关
+            document.getElementById('controlToggle').addEventListener('click', () => {
+                document.getElementById('controlPanel').classList.toggle('open');
+            });
+
+            // 点击外部关闭面板
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('controlPanel');
+                const toggle = document.getElementById('controlToggle');
+                if (!panel.contains(e.target) && !toggle.contains(e.target)) {
+                    panel.classList.remove('open');
+                }
+            });
+
+            // 文字输入
+            document.getElementById('textInput').addEventListener('input', (e) => {
+                config.text = e.target.value;
+                document.getElementById('loveText').textContent = config.text;
+            });
+
+            document.getElementById('subTextInput').addEventListener('input', (e) => {
+                config.subText = e.target.value;
+                document.getElementById('subText').textContent = config.subText;
+            });
+
+            // 颜色输入
+            document.getElementById('colorInput').addEventListener('input', (e) => {
+                config.heartColor = e.target.value;
+                document.documentElement.style.setProperty('--heart-color', config.heartColor);
+                createParticles();
+            });
+
+            document.getElementById('bgColorInput').addEventListener('input', (e) => {
+                config.bgColor = e.target.value;
+                document.documentElement.style.setProperty('--bg-color', config.bgColor);
+            });
+
+            // 滑块
+            document.getElementById('sizeInput').addEventListener('input', (e) => {
+                config.heartSize = parseInt(e.target.value);
+                document.getElementById('sizeValue').textContent = config.heartSize + 'px';
+                document.documentElement.style.setProperty('--heart-size', config.heartSize + 'px');
+            });
+
+            document.getElementById('speedInput').addEventListener('input', (e) => {
+                config.beatSpeed = parseFloat(e.target.value);
+                document.getElementById('speedValue').textContent = config.beatSpeed + 's';
+                document.documentElement.style.setProperty('--beat-speed', config.beatSpeed + 's');
+                if (config.soundEnabled) startHeartbeatSound();
+            });
+
+            document.getElementById('particleInput').addEventListener('input', (e) => {
+                config.particleCount = parseInt(e.target.value);
+                document.getElementById('particleValue').textContent = config.particleCount;
+                createParticles();
+            });
+
+            // 开关
+            document.getElementById('particleToggle').addEventListener('change', (e) => {
+                config.particlesEnabled = e.target.checked;
+                createParticles();
+            });
+
+            document.getElementById('soundToggle').addEventListener('change', (e) => {
+                config.soundEnabled = e.target.checked;
+                if (config.soundEnabled) initAudio();
+                updateSoundState();
+            });
+
+            // 主题预设
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    config.heartColor = btn.dataset.color;
+                    config.bgColor = btn.dataset.bg;
+                    document.getElementById('colorInput').value = config.heartColor;
+                    document.getElementById('bgColorInput').value = config.bgColor;
+                    document.documentElement.style.setProperty('--heart-color', config.heartColor);
+                    document.documentElement.style.setProperty('--bg-color', config.bgColor);
+                    createParticles();
+                });
+            });
+
+            // 保存/重置
+            document.getElementById('saveBtn').addEventListener('click', saveConfig);
+            document.getElementById('resetBtn').addEventListener('click', resetConfig);
+
+            // 爱心点击
+            document.getElementById('heartWrapper').addEventListener('click', handleHeartClick);
+
+            // 背景点击产生爱心
+            document.addEventListener('click', handleBackgroundClick);
+
+            // 全屏
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+
+            // 音乐按钮
+            document.getElementById('musicBtn').addEventListener('click', () => {
+                config.soundEnabled = !config.soundEnabled;
+                document.getElementById('soundToggle').checked = config.soundEnabled;
+                if (config.soundEnabled) initAudio();
+                updateSoundState();
+            });
+        }
+
+        // ========== 初始化 ==========
+        function init() {
+            loadConfig();
+            applyConfig();
+            updateControls();
+            bindEvents();
+        }
+
+        init();
+    </script>
+</body>
+</html>
